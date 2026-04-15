@@ -1,0 +1,256 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:ital,wght@0,400;0,500;0,700;0,900;1,400;1,500;1,700;1,900&family=Exo+2:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Exo 2", ui-sans-serif, system-ui, sans-serif;
+  --font-orbitron: "Orbitron", sans-serif;
+}
+
+html::-webkit-scrollbar, body::-webkit-scrollbar, *::-webkit-scrollbar {
+  display: none !important;
+}
+
+html, body {
+  overflow-x: hidden;
+  background: linear-gradient(to bottom, #1A1A2E 0%, #0F0F0F 25%, #16213E 50%, #1B1B2F 75%, #2D1B2D 100%);
+  min-height: 100vh;
+  -ms-overflow-style: none !important;  /* IE and Edge */
+  scrollbar-width: none !important;  /* Firefox */
+}
+
+img {
+  background-color: #0a0a0a;
+}
+
+/* Global Noise Texture Overlay */
+body::after {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url("https://grainy-gradients.vercel.app/noise.svg");
+  opacity: 0.03;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/*
+  ========================================
+  1. 櫻花飄落動畫 (Sakura Animation)
+  ========================================
+*/
+@keyframes fall {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  100% {
+    transform: translate3d(20vw, 110vh, 0) rotate(360deg);
+  }
+}
+
+.sakura-petal {
+  animation-name: fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: transform;
+}
+
+/*
+  ========================================
+  2. 圖片邊緣羽化遮罩 (Image Edge Mask) - REMOVED
+  ========================================
+*/
+
+/*
+  ========================================
+  3. Forza Horizon 6 UI Utilities
+  ========================================
+*/
+.font-orbitron {
+  font-family: 'Orbitron', sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6, .heading-italic {
+  font-family: 'Orbitron', sans-serif;
+  font-style: italic;
+}
+
+.bg-animated-grid {
+  background-size: 40px 40px;
+  background-image: linear-gradient(to right, rgba(0, 0, 0, 0.03) 1px, transparent 1px),
+                    linear-gradient(to bottom, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
+  animation: grid-move 15s linear infinite;
+}
+
+.dark .bg-animated-grid {
+  background-image: linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+}
+
+@keyframes grid-move {
+  0% { background-position: 0 0; }
+  100% { background-position: 40px 40px; }
+}
+
+.bg-dot-matrix {
+  background-image: radial-gradient(rgba(0, 0, 0, 0.03) 2px, transparent 2px);
+  background-size: 20px 20px;
+}
+
+.bg-diagonal-stripes {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgba(0, 0, 0, 0.01),
+    rgba(0, 0, 0, 0.01) 2px,
+    transparent 2px,
+    transparent 8px
+  );
+}
+
+.bg-tire-tracks {
+  background-image: repeating-linear-gradient(
+    -15deg,
+    transparent,
+    transparent 10px,
+    rgba(0, 0, 0, 0.015) 10px,
+    rgba(0, 0, 0, 0.015) 15px,
+    transparent 15px,
+    transparent 25px,
+    rgba(0, 0, 0, 0.015) 25px,
+    rgba(0, 0, 0, 0.015) 30px
+  );
+  background-size: 100px 100px;
+}
+
+.car-float-mask {
+  mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 100%);
+  -webkit-mask-image: -webkit-linear-gradient(to bottom, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 100%);
+}
+
+.text-shadow-strong {
+  text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.9), 0 0 20px rgba(0, 0, 0, 0.7) !important;
+}
+
+.backdrop-blur-sm, .backdrop-blur-md, .backdrop-blur-lg, .backdrop-blur-xl, .backdrop-blur-\[15px\] {
+  will-change: transform, opacity;
+}
+
+/*
+  ========================================
+  4. Scroll Reveal Animations
+  ========================================
+*/
+.reveal-section {
+  overflow: hidden;
+}
+
+.slide-in-left {
+  opacity: 0;
+  transform: translate3d(-50px, 0, 0);
+  transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+  will-change: transform, opacity;
+}
+
+.slide-in-right {
+  opacity: 0;
+  transform: translate3d(50px, 0, 0);
+  transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+  will-change: transform, opacity;
+}
+
+.slide-up {
+  opacity: 0;
+  transform: translate3d(0, 50px, 0);
+  transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+  will-change: transform, opacity;
+}
+
+.is-visible .slide-in-left,
+.is-visible .slide-in-right {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+.is-visible .slide-up {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+/*
+  ========================================
+  6. Cinematic Curtain Reveal
+  ========================================
+*/
+.curtain-top,
+.curtain-bottom {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 50vh;
+  background-color: #000;
+  z-index: 40;
+  pointer-events: none;
+}
+
+.curtain-top {
+  top: 0;
+  animation: reveal-curtain-top 1.5s ease-in-out forwards;
+}
+
+.curtain-bottom {
+  bottom: 0;
+  animation: reveal-curtain-bottom 1.5s ease-in-out forwards;
+}
+
+@keyframes reveal-curtain-top {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-100%); }
+}
+
+@keyframes reveal-curtain-bottom {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(100%); }
+}
+
+.video-vignette {
+  box-shadow: inset 0 0 150px rgba(230, 0, 18, 0.4);
+}
+.car-glow-treatment {
+  mask-image: linear-gradient(to bottom, black 80%, transparent);
+  -webkit-mask-image: -webkit-linear-gradient(to bottom, black 80%, transparent);
+}
+
+.neon-pulse-border {
+  animation: neon-pulse 2s infinite;
+}
+
+@keyframes neon-pulse {
+  0% { box-shadow: 0 0 5px rgba(220, 38, 38, 0.4), inset 0 0 5px rgba(220, 38, 38, 0.4); border-color: rgba(220, 38, 38, 0.5); }
+  50% { box-shadow: 0 0 20px rgba(220, 38, 38, 0.8), inset 0 0 10px rgba(220, 38, 38, 0.6); border-color: rgba(220, 38, 38, 1); }
+  100% { box-shadow: 0 0 5px rgba(220, 38, 38, 0.4), inset 0 0 5px rgba(220, 38, 38, 0.4); border-color: rgba(220, 38, 38, 0.5); }
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+
+
+

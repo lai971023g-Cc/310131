@@ -1,0 +1,58 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A registered user of the site.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "The user's unique ID." },
+        "displayName": { "type": "string", "description": "The user's display name." },
+        "photoURL": { "type": "string", "description": "The user's profile picture URL." },
+        "role": { "type": "string", "enum": ["admin", "user"], "description": "The user's role." }
+      },
+      "required": ["uid", "displayName", "role"]
+    },
+    "Post": {
+      "title": "Post",
+      "description": "A community post created by a user.",
+      "type": "object",
+      "properties": {
+        "authorId": { "type": "string", "description": "The UID of the user who created the post." },
+        "authorName": { "type": "string", "description": "The display name of the author." },
+        "authorPhoto": { "type": "string", "description": "The profile picture URL of the author." },
+        "content": { "type": "string", "description": "The text content of the post." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "The timestamp when the post was created." },
+        "replyCount": { "type": "number", "description": "The number of replies to this post." }
+      },
+      "required": ["authorId", "authorName", "content", "createdAt", "replyCount"]
+    },
+    "Reply": {
+      "title": "Reply",
+      "description": "A reply to a community post.",
+      "type": "object",
+      "properties": {
+        "postId": { "type": "string", "description": "The ID of the post this reply belongs to." },
+        "authorId": { "type": "string", "description": "The UID of the user who created the reply." },
+        "authorName": { "type": "string", "description": "The display name of the author." },
+        "authorPhoto": { "type": "string", "description": "The profile picture URL of the author." },
+        "content": { "type": "string", "description": "The text content of the reply." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "The timestamp when the reply was created." }
+      },
+      "required": ["postId", "authorId", "authorName", "content", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Stores user profiles and roles."
+    },
+    "/posts/{postId}": {
+      "schema": { "$ref": "#/entities/Post" },
+      "description": "Stores community posts."
+    },
+    "/posts/{postId}/replies/{replyId}": {
+      "schema": { "$ref": "#/entities/Reply" },
+      "description": "Stores replies to a specific post."
+    }
+  }
+}

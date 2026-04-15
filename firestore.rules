@@ -1,0 +1,169 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: {userId}
+    // Fields:
+    //   - uid: string (required)
+    //   - displayName: string (required, < 50 chars)
+    //   - photoURL: string (optional, valid URL)
+    //   - role: string (required, 'admin' or 'user')
+    //
+    // Collection: posts
+    // Document ID: {postId}
+    // Fields:
+    //   - authorId: string (required, immutable)
+    //   - authorName: string (required, < 50 chars)
+    //   - authorPhoto: string (optional, valid URL)
+    //   - content: string (required, < 2000 chars)
+    //   - createdAt: timestamp (required, immutable)
+    //   - replyCount: number (required, >= 0)
+    //
+    // Collection: posts/{postId}/replies
+    // Document ID: {replyId}
+    // Fields:
+    //   - postId: string (required, immutable)
+    //   - authorId: string (required, immutable)
+    //   - authorName: string (required, < 50 chars)
+    //   - authorPhoto: string (optional, valid URL)
+    //   - content: string (required, < 1000 chars)
+    //   - createdAt: timestamp (required, immutable)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+        (request.auth.token.email == "lai971023g@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+    
+    function isValidUrl(url) {
+      return url is string && (url.matches("^https://.*") || url.matches("^http://.*"));
+    }
+    
+    function isOptionalUrl(url) {
+      return url == null || isValidUrl(url);
+    }
+
+    function areImmutableFieldsUnchanged(fields) {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(fields);
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+    
+    function isValidUser(data) {
+      return hasOnlyAllowedFields(['uid', 'displayName', 'photoURL', 'role']) &&
+             data.uid is string &&
+             data.displayName is string && data.displayName.size() > 0 && data.displayName.size() <= 50 &&
+             (!('photoURL' in data) || isOptionalUrl(data.photoURL)) &&
+             data.role in ['admin', 'user'];
+    }
+
+    function isValidPost(data) {
+      return hasOnlyAllowedFields(['authorId', 'authorName', 'authorPhoto', 'content', 'createdAt', 'replyCount']) &&
+             data.authorId is string &&
+             data.authorName is string && data.authorName.size() > 0 && data.authorName.size() <= 50 &&
+             (!('authorPhoto' in data) || isOptionalUrl(data.authorPhoto)) &&
+             data.content is string && data.content.size() > 0 && data.content.size() <= 2000 &&
+             data.createdAt is timestamp &&
+             data.replyCount is number && data.replyCount >= 0;
+    }
+
+    function isValidReply(data, postId) {
+      return hasOnlyAllowedFields(['postId', 'authorId', 'authorName', 'authorPhoto', 'content', 'createdAt']) &&
+             data.postId == postId &&
+             data.authorId is string &&
+             data.authorName is string && data.authorName.size() > 0 && data.authorName.size() <= 50 &&
+             (!('authorPhoto' in data) || isOptionalUrl(data.authorPhoto)) &&
+             data.content is string && data.content.size() > 0 && data.content.size() <= 1000 &&
+             data.createdAt is timestamp;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      // Anyone can read user profiles (needed for displaying post authors)
+      allow read: if true;
+      
+      // Users can create their own profile. Role must be 'user' unless they are already admin.
+      allow create: if isOwner(userId) && isValidUser(request.resource.data) && 
+                    (request.resource.data.role == 'user' || isAdmin()) &&
+                    request.resource.data.uid == userId;
+                    
+      // Users can update their own profile, but cannot change their role.
+      allow update: if isOwner(userId) && isValidUser(request.resource.data) && 
+                    (request.resource.data.role == resource.data.role || isAdmin()) &&
+                    areImmutableFieldsUnchanged(['uid']);
+                    
+      allow delete: if isAdmin();
+    }
+
+    match /posts/{postId} {
+      // Anyone can read posts
+      allow read: if true;
+      
+      // Authenticated users can create posts
+      allow create: if isAuthenticated() && isValidPost(request.resource.data) && 
+                    request.resource.data.authorId == request.auth.uid &&
+                    request.resource.data.replyCount == 0;
+                    
+      // Authors can update their post content. Anyone can increment replyCount if they are adding a reply.
+      allow update: if isAuthenticated() && isValidPost(request.resource.data) &&
+                    (
+                      // Case 1: Author updating content
+                      (request.auth.uid == resource.data.authorId && 
+                       areImmutableFieldsUnchanged(['authorId', 'createdAt', 'replyCount']))
+                      ||
+                      // Case 2: Someone replying (incrementing replyCount by 1)
+                      (areImmutableFieldsUnchanged(['authorId', 'authorName', 'authorPhoto', 'content', 'createdAt']) &&
+                       request.resource.data.replyCount == resource.data.replyCount + 1 &&
+                       getAfter(/databases/$(database)/documents/posts/$(postId)/replies/$(request.auth.uid + '_' + request.time.toMillis())).data != null)
+                      ||
+                      // Case 3: Admin updating
+                      isAdmin()
+                    );
+                    
+      allow delete: if isAuthenticated() && (request.auth.uid == resource.data.authorId || isAdmin());
+
+      match /replies/{replyId} {
+        // Anyone can read replies
+        allow read: if true;
+        
+        // Authenticated users can create replies
+        allow create: if isAuthenticated() && isValidReply(request.resource.data, postId) &&
+                      request.resource.data.authorId == request.auth.uid;
+                      
+        // Authors can update their replies
+        allow update: if isAuthenticated() && isValidReply(request.resource.data, postId) &&
+                      request.auth.uid == resource.data.authorId &&
+                      areImmutableFieldsUnchanged(['postId', 'authorId', 'createdAt']);
+                      
+        allow delete: if isAuthenticated() && (request.auth.uid == resource.data.authorId || isAdmin());
+      }
+    }
+  }
+}
